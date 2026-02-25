@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 
 function env_load(string $path): array
@@ -22,27 +21,47 @@ function env_load(string $path): array
 
 $ENV = env_load(__DIR__ . '/../.env');
 
-// expõe as variáveis do .env para getenv() / $_ENV
+// expõe as variáveis do .env para getenv() / $_ENV (sem sobrescrever as do sistema)
 foreach ($ENV as $k => $v) {
-  // evita sobrescrever vars já definidas pelo sistema/Apache
   if (getenv($k) === false) {
     putenv($k . '=' . $v);
   }
   if (!isset($_ENV[$k])) $_ENV[$k] = $v;
 }
 
+/**
+ * Busca variável de ambiente de forma robusta:
+ * 1) getenv() (EasyPanel/Docker)
+ * 2) $_ENV (EasyPanel/Docker)
+ * 3) arquivo .env carregado (dev/local)
+ */
 function env_get(string $key, ?string $default = null): ?string
 {
   global $ENV;
-  return $ENV[$key] ?? $default;
+
+  $v = getenv($key);
+  if ($v !== false && $v !== '') return $v;
+
+  if (isset($_ENV[$key]) && $_ENV[$key] !== '') return (string)$_ENV[$key];
+
+  if (isset($ENV[$key]) && $ENV[$key] !== '') return (string)$ENV[$key];
+
+  return $default;
 }
 
 define('APP_ENV', env_get('APP_ENV', 'prod'));
 define('APP_JWT_SECRET', env_get('APP_JWT_SECRET', ''));
 
-define('SUPABASE_URL', rtrim(env_get('SUPABASE_URL', ''), '/'));
-define('SUPABASE_SERVICE_ROLE_KEY', env_get('SUPABASE_SERVICE_ROLE_KEY', ''));
+// Supabase
+define('SUPABASE_URL', rtrim((string)env_get('SUPABASE_URL', ''), '/'));
+define('SUPABASE_SERVICE_ROLE_KEY', (string)env_get('SUPABASE_SERVICE_ROLE_KEY', ''));
 
-define('ALLOWED_ORIGINS', env_get('ALLOWED_ORIGINS', 'https://streambrasil.online'));
+// CORS: aceita ALLOWED_ORIGINS (plural) e ALLOWED_ORIGIN (singular) do painel
+$allowed = env_get('ALLOWED_ORIGINS', null);
+if ($allowed === null || $allowed === '') {
+  $allowed = env_get('ALLOWED_ORIGIN', 'https://streambrasil.online');
+}
+define('ALLOWED_ORIGINS', (string)$allowed);
 
-define('MP_ACCESS_TOKEN', env_get('MP_ACCESS_TOKEN', ''));
+// MercadoPago
+define('MP_ACCESS_TOKEN', (string)env_get('MP_ACCESS_TOKEN', ''));

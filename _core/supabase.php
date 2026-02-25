@@ -1,5 +1,6 @@
 <?php
 declare(strict_types=1);
+
 require_once __DIR__ . '/config.php';
 
 final class Supabase {
@@ -7,11 +8,37 @@ final class Supabase {
   private string $key;
 
   public function __construct() {
-    $this->base = SUPABASE_URL;
-    $this->key = SUPABASE_SERVICE_ROLE_KEY;
-    if (!$this->base || !$this->key) {
+    // 1) Mantém o que já funciona: tenta via constantes do config.php (se existirem)
+    $baseConst = defined('SUPABASE_URL') ? (string) SUPABASE_URL : '';
+    $keyConst  = defined('SUPABASE_SERVICE_ROLE_KEY') ? (string) SUPABASE_SERVICE_ROLE_KEY : '';
+
+    // 2) Fallback robusto: lê do ambiente do container (EasyPanel)
+    // Preferência: Service Role -> Anon -> Key genérica
+    $baseEnv = (string) (getenv('SUPABASE_URL') ?: ($_ENV['SUPABASE_URL'] ?? ''));
+
+    $serviceKeyEnv =
+      (string) (getenv('SUPABASE_SERVICE_ROLE_KEY') ?: ($_ENV['SUPABASE_SERVICE_ROLE_KEY'] ?? ''));
+
+    $anonKeyEnv =
+      (string) (getenv('SUPABASE_ANON_KEY') ?: ($_ENV['SUPABASE_ANON_KEY'] ?? ''));
+
+    $genericKeyEnv =
+      (string) (getenv('SUPABASE_KEY') ?: ($_ENV['SUPABASE_KEY'] ?? ''));
+
+    $this->base = trim($baseConst !== '' ? $baseConst : $baseEnv);
+
+    // mantém seu comportamento atual (service role), mas não quebra se só tiver anon
+    $candidateKey = trim($keyConst !== '' ? $keyConst : $serviceKeyEnv);
+    if ($candidateKey === '') $candidateKey = trim($anonKeyEnv);
+    if ($candidateKey === '') $candidateKey = trim($genericKeyEnv);
+
+    $this->key = $candidateKey;
+
+    if ($this->base === '' || $this->key === '') {
       throw new RuntimeException('Supabase URL/KEY não configurados no .env');
     }
+
+    $this->base = rtrim($this->base, '/');
   }
 
   public function rest(string $method, string $tablePath, array $query = [], ?array $body = null, array $headers = []): array {
@@ -22,13 +49,16 @@ final class Supabase {
     }
 
     $ch = curl_init($url);
+
     $defaultHeaders = [
       'apikey: ' . $this->key,
       'Authorization: Bearer ' . $this->key,
       'Content-Type: application/json',
     ];
 
-    foreach ($headers as $h) $defaultHeaders[] = $h;
+    foreach ($headers as $h) {
+      $defaultHeaders[] = $h;
+    }
 
     curl_setopt_array($ch, [
       CURLOPT_RETURNTRANSFER => true,
