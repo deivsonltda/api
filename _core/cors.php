@@ -13,7 +13,7 @@ function cors_handle(): void {
 
   // ✅ origens permitidas (ajuste se quiser)
   $allowed = [
-    'http://streambrasil.online'
+    'https://streambrasil.online'
   ];
 
   if ($origin && in_array($origin, $allowed, true)) {
