@@ -13,9 +13,7 @@ function cors_handle(): void {
 
   // ✅ origens permitidas (ajuste se quiser)
   $allowed = [
-    'http://localhost:8080',
-    'http://127.0.0.1:8080',
-    'http://afiliados.local',
+    'http://streambrasil.online'
   ];
 
   if ($origin && in_array($origin, $allowed, true)) {
@@ -23,7 +21,7 @@ function cors_handle(): void {
     header("Vary: Origin");
   } else {
     // fallback DEV (se não vier Origin por algum motivo)
-    header("Access-Control-Allow-Origin: http://localhost:8080");
+    header("Access-Control-Allow-Origin: https://streambrasil.online");
     header("Vary: Origin");
   }
 

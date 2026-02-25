@@ -36,7 +36,7 @@ $ins = $sb->rest('POST', 'password_resets', [], [
   'used' => false,
 ], ['Prefer: return=representation']);
 
-$link = "http://localhost:8080/reset?token=" . urlencode($token);
+$link = "https://streambrasil.online/reset?token=" . urlencode($token);
 
 if (APP_ENV === 'dev') {
   // DEV: devolve o link pra você testar sem SMTP

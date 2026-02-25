@@ -43,6 +43,6 @@ define('APP_JWT_SECRET', env_get('APP_JWT_SECRET', ''));
 define('SUPABASE_URL', rtrim(env_get('SUPABASE_URL', ''), '/'));
 define('SUPABASE_SERVICE_ROLE_KEY', env_get('SUPABASE_SERVICE_ROLE_KEY', ''));
 
-define('ALLOWED_ORIGINS', env_get('ALLOWED_ORIGINS', 'http://localhost:8080'));
+define('ALLOWED_ORIGINS', env_get('ALLOWED_ORIGINS', 'https://streambrasil.online'));
 
 define('MP_ACCESS_TOKEN', env_get('MP_ACCESS_TOKEN', ''));
